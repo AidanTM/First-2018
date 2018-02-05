@@ -4,13 +4,11 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-//import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.DriverStation;
-//import edu.wpi.first.wpilibj.Joystick;
-//import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -31,7 +29,9 @@ public class Robot extends IterativeRobot {
 	static Joystick playerController;
 	static DriverStation ds;
 	
-	static final double motorOffset = 0.92;
+	static final double MOTOR_OFFSET = 0.92;
+	static final double MOTOR_AUTO_DIST = 1.0;
+	static final double MOTOR_AUTO_TURN = 1.0;
 	
 	double speedMultiplier;
 	double[] stickVel;
@@ -47,6 +47,8 @@ public class Robot extends IterativeRobot {
 		chooser.addDefault("Default Auto", defaultAuto);
 		chooser.addObject("My Auto", customAuto);
 		SmartDashboard.putData("Auto choices", chooser);
+		
+		SmartDashboard.putNumber("test", 1.23);
 		
 		leftMotors = new RobotDrive(1, 2);
 		rightMotors = new RobotDrive(3, 4);
@@ -96,7 +98,8 @@ public class Robot extends IterativeRobot {
 			break;
 		case defaultAuto:
 		default:
-			// Put default auto code here
+			travelDistance(11);
+			spinDegrees(-90);
 			break;
 		}
 	}
@@ -113,7 +116,7 @@ public class Robot extends IterativeRobot {
 		
 		//Set the stick values based on the sticks and speedMultiplier.
 		stickVel[0] = (double)Math.round(playerController.getRawAxis(1) * speedMultiplier * 100d) / 100d;
-		if (playerController.getRawAxis(5) < 0) stickVel[1] = (double)Math.round(playerController.getRawAxis(5) * speedMultiplier * 100d) / 100d * motorOffset;
+		if (playerController.getRawAxis(5) < 0) stickVel[1] = (double)Math.round(playerController.getRawAxis(5) * speedMultiplier * 100d) / 100d * MOTOR_OFFSET;
 		else stickVel[1] = (double)Math.round(playerController.getRawAxis(5) * speedMultiplier * 100d) / 100d;//To equalize the offset in motor speed.
 		stickVel[2] = Math.round(playerController.getRawAxis(2) * 100d) / 100d;
 		stickVel[3] = Math.round(playerController.getRawAxis(0) * speedMultiplier * 100d) / 100d;
@@ -127,7 +130,7 @@ public class Robot extends IterativeRobot {
 		else
 		{
 			leftMotors.tankDrive(-stickVel[0] + (stickVel[3] * stickVel[5]), stickVel[0] - (stickVel[3] * stickVel[5]),true);
-			rightMotors.tankDrive((stickVel[0] + (stickVel[3] * stickVel[5])) * motorOffset, (-stickVel[0] - (stickVel[3] * stickVel[5])) * motorOffset,true);
+			rightMotors.tankDrive((stickVel[0] + (stickVel[3] * stickVel[5])) * MOTOR_OFFSET, (-stickVel[0] - (stickVel[3] * stickVel[5])) * MOTOR_OFFSET,true);
 		}
 		if (playerController.getRawButton(1) && stickVel[2] > 0.1) gripperMotors.tankDrive(-stickVel[2], -stickVel[2]);
 		else if (stickVel[2] > 0.1) gripperMotors.tankDrive(stickVel[2], stickVel[2]);
@@ -149,6 +152,36 @@ public class Robot extends IterativeRobot {
 			debugLoop = 0;
 		}
 		else debugLoop++;
+	}
+	
+	public void travelDistance(double meters) //Meters or Feet?
+	{
+		int moveDirection = 1;
+		
+		if (Math.abs(meters - 0.00001) < 0.1) return; //Check if we got a distance of almost 0
+		else if (meters < -0.01) moveDirection = -1; //Then check to see if we are going to go backwards
+		
+		for(int i = 0; i < (meters * MOTOR_AUTO_DIST); i++) //Tell the motors to run until the specified distance is reached
+		{
+			leftMotors.tankDrive(-0.5 * moveDirection,0.5 * moveDirection,false);
+			rightMotors.tankDrive(0.5 * moveDirection,-0.5 * moveDirection,false);
+			Timer.delay(0.005);
+		}
+	}
+	
+	public void spinDegrees(double degrees)
+	{
+		int turnDirection = 1;
+		
+		if (Math.abs(degrees - 0.00001) < 0.1) return; //Check if our turn amount is almost 0
+		else if (degrees < -0.01) turnDirection = -1; //Then check if we will go counter-clockwise
+		
+		for(int i = 0;i < (degrees * MOTOR_AUTO_TURN); i++)  //Tell the motors to run until the specified angle is reached
+		{
+			leftMotors.tankDrive(-0.5 * turnDirection,0.5 * turnDirection,false);
+			rightMotors.tankDrive(-0.5 * turnDirection,0.5 * turnDirection,false);
+			Timer.delay(0.005);
+		}
 	}
 	
 	public static void printWarn(String msg)
