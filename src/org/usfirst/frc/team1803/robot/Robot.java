@@ -4,11 +4,14 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.Sendable;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.vision.*;
+import edu.wpi.cscore.*;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -19,7 +22,9 @@ import edu.wpi.first.wpilibj.DriverStation;
  */
 public class Robot extends IterativeRobot {
 	final String defaultAuto = "Default";
-	final String customAuto = "My Auto";
+	final String leftStationAuto = "leftSide";
+	final String middleStationAuto = "middleSide";
+	final String rightStationAuto = "rightSide";
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
 	
@@ -27,14 +32,21 @@ public class Robot extends IterativeRobot {
 	static RobotDrive rightMotors;
 	static RobotDrive gripperMotors;
 	static Joystick playerController;
+	//static VideoCamera camera;
+	static AxisCamera camera;
+	static VideoSource camSource;
 	static DriverStation ds;
 	
 	static final double MOTOR_OFFSET = 0.92;
 	static final double MOTOR_AUTO_DIST = 1.0;
 	static final double MOTOR_AUTO_TURN = 1.0;
 	
-	double speedMultiplier;
-	double[] stickVel;
+	static final String CAMERA_IP = "10.18.03.11";
+	
+	static double speedMultiplier;
+	static double[] stickVel;
+	
+	static double bucketAngle;
 	
 	static int debugLoop;
 
@@ -45,7 +57,9 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void robotInit() {
 		chooser.addDefault("Default Auto", defaultAuto);
-		chooser.addObject("My Auto", customAuto);
+		chooser.addObject("Left Station", leftStationAuto);
+		chooser.addObject("Middle Station", middleStationAuto);
+		chooser.addObject("Right Station", rightStationAuto);
 		SmartDashboard.putData("Auto choices", chooser);
 		
 		SmartDashboard.putNumber("test", 1.23);
@@ -66,6 +80,10 @@ public class Robot extends IterativeRobot {
 		stickVel = new double[6];
 		
 		debugLoop = 0;
+		
+		camera = new AxisCamera("axis-camera",CAMERA_IP);
+		
+		SmartDashboard.putData("Main Camera", (Sendable) camera);
 		
 		System.out.println("Robot Init Done");
 	}
@@ -93,13 +111,29 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 		switch (autoSelected) {
-		case customAuto:
-			// Put custom auto code here
+		case leftStationAuto:
+			travelDistance(15);
+			spinDegrees(90);
+			travelDistance(5);
+			setBasketAngle(90);
+			break;
+		case middleStationAuto:
+			travelDistance(2);
+			spinDegrees(-22.5);
+			travelDistance(10 / (Math.sin(22.5) * (180 / Math.PI)));
+			spinDegrees(22.5);
+			travelDistance(1);
+			setBasketAngle(90);
+			break;
+		case rightStationAuto:
+			travelDistance(15);
+			spinDegrees(90);
+			travelDistance(5);
+			setBasketAngle(90);
 			break;
 		case defaultAuto:
 		default:
-			travelDistance(11);
-			spinDegrees(-90);
+			travelDistance(15);
 			break;
 		}
 	}
@@ -182,6 +216,11 @@ public class Robot extends IterativeRobot {
 			rightMotors.tankDrive(-0.5 * turnDirection,0.5 * turnDirection,false);
 			Timer.delay(0.005);
 		}
+	}
+	
+	public static void setBasketAngle(double angle)
+	{
+		double deltaAngle = (angle - bucketAngle) / 10;
 	}
 	
 	public static void printWarn(String msg)
