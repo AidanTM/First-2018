@@ -48,6 +48,8 @@ public class Robot extends IterativeRobot {
 	
 	static double bucketAngle;
 	
+	static boolean autoInit;
+	
 	static int debugLoop;
 
 	/**
@@ -83,7 +85,9 @@ public class Robot extends IterativeRobot {
 		
 		camera = new AxisCamera("axis-camera",CAMERA_IP);
 		
-		SmartDashboard.putData("Main Camera", (Sendable) camera);
+		autoInit = false;
+		
+		//SmartDashboard.putData("Main Camera", (Sendable) camera);
 		
 		System.out.println("Robot Init Done");
 	}
@@ -110,6 +114,9 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() {
+		
+		if (autoInit) return;
+		autoInit = true;
 		switch (autoSelected) {
 		case leftStationAuto:
 			travelDistance(15);
